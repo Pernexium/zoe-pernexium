@@ -5,3 +5,4 @@ Werkzeug
 boto3
 pandas
 pytz
+gunicorn
