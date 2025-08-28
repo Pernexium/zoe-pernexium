@@ -60,7 +60,10 @@ S3_BUCKET_CONFIG = os.getenv("S3_BUCKET_CONFIG")
 app = Flask(__name__,template_folder="src/app/templates",static_folder="src/app/static",)
 app.secret_key = SECRET_KEY
 
-s3 = boto3.client("s3", region_name=AWS_REGION)
+s3 = boto3.client("s3",
+    region_name=AWS_REGION,
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),)
 tz_cdmx = pytz.timezone("America/Mexico_City")
 LOG_QUEUES: Dict[str, queue.Queue[Optional[str]]] = {}
 
