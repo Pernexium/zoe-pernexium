@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% set page = "detonador" %}
+{% block title %}Detonador Maestro{% endblock %}
+{% block heading %}Detonador Maestro{% endblock %}
+{% block content %}
+  <section class="detonador-hero">
+    <p class="detonador-lead text-2xl font-semibold text-primary">
+      ¿Cuál será tu estrategia de cobro hoy: voz, chat o blast?
+    </p>
+    <div class="detonador-btn-wrapper">
+      <a href="{{ url_for('detonador_ara', pagina='detonador/ara') }}" class="detonador-btn ara">
+        <span class="titulo">ARA</span>
+        <span class="sub">Artificially Responsive Agent</span>
+      </a>
+      <a href="{{ url_for('detonador_aria', pagina='detonador/aria') }}" class="detonador-btn aria">
+        <span class="titulo">ARIA</span>
+        <span class="sub">Asistente de Respuestas Inteligentes Avanzadas</span>
+      </a>
+      <a href="{{ url_for('detonador_sam', pagina='detonador/sam') }}" class="detonador-btn blaster">
+        <span class="titulo">SAM</span>
+        <span class="sub">Sistema Automatizado de Mensajería</span>
+      </a>
+    </div>
+  </section>
+  <style>
+    :root{
+      --primary:       #0c376c;
+      --primary-light: #3C5F89;
+      --success:       #1c8d4f;
+      --accent:        #fd7e14;
+      --bg-start:      #eef4ff;
+      --bg-end:        #ffffff;
+    }
+    .detonador-hero{
+      min-height:calc(100vh - 160px);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:2.5rem;
+      padding:2rem 1rem;
+      position:relative;
+    }
+    body{
+      background:radial-gradient(circle at 20% 20%,rgba(12,55,108,.12) 0%,transparent 60%),
+                 radial-gradient(circle at 80% 80%,rgba(253,126,20,.14) 0%,transparent 70%),
+                 linear-gradient(135deg,var(--bg-start),var(--bg-end));
+      min-height:100vh;
+    }
+    .detonador-lead{
+      font-weight:600;
+      text-align:center;
+      color:var(--primary-light);
+      max-width:600px;
+      margin-inline:auto;
+    }
+    .detonador-btn-wrapper{
+      --gap:2rem;
+      display:grid;
+      grid-template-columns:repeat(2,minmax(320px,1fr)); 
+      gap:var(--gap);
+      justify-content:center;
+      width:100%;
+      max-width:920px;
+    }
+    .detonador-btn-wrapper > :nth-child(3){
+      grid-column:1 / -1;                      
+      justify-self:center;                      
+      width:calc((100% - var(--gap)) / 2);      
+    }
+    .detonador-btn{
+      position:relative;
+      isolation:isolate;
+      display:flex;
+      flex-direction:column;
+      place-content:center;
+      text-align:center;
+      padding:2.8rem 1.8rem;
+      min-height:180px;
+      width:100%;
+      border-radius:2rem;
+      font-family:system-ui,sans-serif;
+      color:#fff;
+      text-decoration:none;
+      box-shadow:0 10px 30px rgba(0,0,0,.18);
+      backdrop-filter:blur(6px) saturate(130%);
+      transition:transform .3s ease, box-shadow .3s ease;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.28); /* glassy edge */
+    }
+    .detonador-btn:hover{
+      transform:translateY(-6px) scale(1.03);
+      box-shadow:0 14px 36px rgba(0,0,0,.28);
+    }
+    .detonador-btn:active{
+      transform:translateY(-2px) scale(1.01);
+    }
+    .detonador-btn.ara{
+      background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);
+    }
+    .detonador-btn.aria{
+      background:linear-gradient(135deg,var(--success) 0%, #20c997 100%);
+    }
+    .detonador-btn.blaster{
+      background:linear-gradient(135deg,#d6336c 0%, var(--accent) 100%);
+    }
+    .detonador-btn::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:rgba(255,255,255,.14);
+      border-radius:inherit;
+      transform:scale(.92) rotate(2deg);
+      opacity:0;
+      transition:transform .5s ease, opacity .5s ease;
+      z-index:-1;
+    }
+    .detonador-btn:hover::before{
+      transform:scale(1.08) rotate(-2deg);
+      opacity:1;
+    }
+    .titulo{
+      font-size:2.4rem;
+      font-weight:800;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      line-height:1;
+    }
+    .sub{
+      margin-top:.6rem;
+      font-size:1.1rem;
+      font-weight:400;
+      opacity:.95;
+    }
+    @media (max-width:640px){
+      .detonador-btn-wrapper{
+        grid-template-columns:1fr;
+      }
+      .detonador-btn-wrapper > :nth-child(3){
+        grid-column:auto;
+        width:100%;
+      }
+      .titulo{font-size:2rem;}
+      .sub{font-size:1rem;}
+    }
+  </style>
+{% endblock %}
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>
+  <script src="{{ url_for('static', filename='js/dashboard_charts.js') }}" defer></script>
+{% endblock %}

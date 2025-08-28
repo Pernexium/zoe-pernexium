@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pernexium - {% block title %}{% endblock %}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='logos/PXM isotipo 2.png') }}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="{{ url_for('static', filename='js/tailwind-config.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="bg-white text-white flex items-center justify-center min-h-screen">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="absolute top-5 right-5 space-y-2">
+        {% for cat, msg in messages %}
+          <div class="px-4 py-2 rounded shadow {{
+            'bg-red-600'   if cat=='error'   else
+            'bg-green-600' if cat=='success' else
+            'bg-yellow-500 text-gray-900' if cat=='warning'
+            else 'bg-blue-600'
+          }}">
+            {{ msg }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  <div class="w-full max-w-md">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% set page = 'segmentador' %}
+{% block title %}Segmentador{% endblock %}
+{% block heading %}Segmentador por Estrategia Decidida{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-5xl px-4 py-8 space-y-10">
+  <section id="loader-card"
+           class="flex flex-col gap-4 rounded-2xl border border-primary/10 bg-white/90 p-6 shadow-sm">
+    <div class="flex items-center gap-3">
+      <i class="bi bi-cloud-download-fill text-xl text-primary shrink-0"></i>
+      <p class="text-sm font-medium text-gray-700">Descargando último reporte…</p>
+    </div>
+    <div class="relative h-2 w-full overflow-hidden rounded-full bg-gray-200">
+      <div id="progress-bar"
+           class="absolute inset-0 origin-left animate-pulse-progress rounded-full bg-gradient-to-r from-primary to-primaryLight"
+           style="width:15%"></div>
+    </div>
+  </section>
+  <section id="main-card"
+           class="hidden flex flex-col gap-10 rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-sm">
+    <div id="info-placeholder" class="flex justify-center"></div>
+    <form id="filter-group" class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <label class="space-y-1">
+        <span class="block text-xs font-medium text-gray-600">Estatus</span>
+        <select id="sel-estatus"
+                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+          <option value="">— Todos —</option>
+          <option value="None">None</option>
+        </select>
+      </label>
+      <label class="space-y-1">
+        <span class="block text-xs font-medium text-gray-600">Dictamen</span>
+        <select id="sel-dictamen"
+                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm"
+                disabled>
+          <option value="">— Todos —</option>
+        </select>
+      </label>
+      <label class="space-y-1">
+        <span class="block text-xs font-medium text-gray-600">Campaña</span>
+        <select id="sel-campana"
+                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+          <option value="">— Todas —</option>
+        </select>
+      </label>
+      <div class="lg:col-span-3">
+        <span class="block mb-1 text-xs font-medium text-gray-600">Columnas</span>
+        <div class="relative">
+          <button id="btn-cols" type="button"
+                  class="inline-flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-2 focus:ring-primary">
+            <span id="cols-summary">— Todas —</span>
+            <i class="bi bi-caret-down-fill text-xs"></i>
+          </button>
+          <div id="cols-menu"
+               class="absolute z-10 mt-1 hidden max-h-60 w-full overflow-y-auto rounded-md border border-gray-200 bg-white p-2 shadow-lg">
+          </div>
+        </div>
+      </div>
+      <div class="lg:col-span-3 flex justify-end">
+        <button id="btn-filtrar" type="button"
+                class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primaryDark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+          <i class="bi bi-funnel-fill"></i> Filtrar
+        </button>
+      </div>
+    </form>
+    <div id="subset-info" class="flex flex-col items-center gap-4"></div>
+  </section>
+</div>
+{% endblock %}
+{% block styles %}
+{{ super() }}
+<style>
+@keyframes pulse-progress { 0%{width:10%}50%{width:85%}100%{width:10%} }
+.animate-pulse-progress { animation: pulse-progress 2s ease-in-out infinite; }
+.preview-table           { border-collapse: collapse; }
+.preview-table th,
+.preview-table td        { padding:.25rem .5rem; white-space:nowrap; }
+.preview-table thead     { position:sticky; top:0; background:#fff; }
+.preview-table tbody tr:nth-child(even){ background:#fafafa; }
+</style>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1/font/bootstrap-icons.css">
+<script>
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const loader   = $('#loader-card');
+const progress = $('#progress-bar');
+const mainCard = $('#main-card');
+const info     = $('#info-placeholder');
+const subset   = $('#subset-info');
+const sest     = $('#sel-estatus');
+const sdict    = $('#sel-dictamen');
+const scamp    = $('#sel-campana');
+const bfilter  = $('#btn-filtrar');
+const btnCols  = $('#btn-cols');
+const menuCols = $('#cols-menu');
+const summary  = $('#cols-summary');
+let colNames = [];
+let colSel   = [];
+let barInt = setInterval(()=>{progress.style.animationDuration=`${1.8+Math.random()*0.6}s`},2000);
+const statusMap = {{ status_to_dictamen | tojson }};
+Object.keys(statusMap).filter(st=>st&&st!=='None')
+  .forEach(st=>sest.insertAdjacentHTML('beforeend',`<option value="${st}">${st}</option>`));
+sest.addEventListener('change',()=>{
+  sdict.innerHTML='<option value="">— Todos —</option>';
+  const ops=statusMap[sest.value]||[];
+  ops.forEach(d=>sdict.insertAdjacentHTML('beforeend',`<option value="${d}">${d}</option>`));
+  sdict.disabled=!ops.length;
+});
+fetch("{{ url_for('segmentador_preview') }}")
+ .then(r=>{if(!r.ok)throw Error();return r.json();})
+ .then(d=>{
+   renderMainReport(d);
+   d.campanas.forEach(c=>scamp.insertAdjacentHTML('beforeend',`<option value="${c}">${c}</option>`));
+   colNames=d.columnas;
+   colSel=colNames.filter(c=>["nombre","credito","TEL 1"].includes(c));
+   paintCols();
+   mainCard.classList.remove('hidden');
+ })
+ .catch(()=>{info.innerHTML=warn('No se encontró ningún reporte para el período actual.');mainCard.classList.remove('hidden');})
+ .finally(()=>{clearInterval(barInt);loader.remove();});
+function paintCols(){
+  menuCols.innerHTML=colNames.map(c=>`
+    <label class="flex items-center gap-2 px-2 py-1 hover:bg-gray-50">
+      <input type="checkbox" value="${c}" class="col-check h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+             ${colSel.includes(c)?'checked':''}>
+      <span class="truncate text-sm">${c}</span>
+    </label>`).join('');
+  summary.textContent=colSel.length===colNames.length?'— Todas —':`${colSel.length} columnas`;
+}
+btnCols.addEventListener('click',()=>menuCols.classList.toggle('hidden'));
+menuCols.addEventListener('change',()=>{
+  colSel=[...menuCols.querySelectorAll('.col-check:checked')].map(i=>i.value);
+  paintCols();
+});
+bfilter.addEventListener('click',()=>{
+  const params=new URLSearchParams({
+    estatus:sest.value,
+    dictamen:sdict.value,
+    campana:scamp.value,
+    columns:colSel.join(',')
+  });
+  subset.innerHTML='';
+  fetch(`{{ url_for('segmentador_filtrar') }}?${params}`)
+   .then(r=>{if(!r.ok)throw Error();return r.json();})
+   .then(d=>{
+      const dl=new URL(`{{ url_for('segmentador_descargar_filtrado') }}`,location.origin);
+      dl.search=params.toString();
+      renderPreview(d,dl.toString());
+   })
+   .catch(()=>subset.innerHTML=warn('El filtrado devolvió 0 registros.'));
+});
+function renderMainReport(d){
+  const size=`(${d.row_count.toLocaleString()} × ${d.col_count})`;
+  info.innerHTML=card('Reporte Cargado:',d.report_name,size,'text-green-600','{{ url_for("segmentador_descargar") }}');
+}
+function renderPreview(d,href){
+  const size=`(${d.row_count.toLocaleString()} × ${colSel.length})`;
+  subset.innerHTML=
+    card('Subconjunto:',d.subset_name,size,'text-orange-500',href)+
+    `<div class="w-full overflow-auto max-h-96 rounded border border-gray-200">${d.preview_html}</div>`;
+}
+function card(label,name,size,color,href){
+  return `<div class="mx-auto flex w-full max-w-3xl items-center justify-between gap-6 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-800 shadow">
+    <div class="flex min-w-0 items-center gap-3">
+      <i class="bi bi-check-circle-fill text-xl ${color} shrink-0"></i>
+      <span class="whitespace-nowrap font-semibold">${label}</span>
+      <span class="truncate font-medium" title="${name}">${name}</span>
+      <span class="text-gray-500">${size}</span>
+    </div>
+    <a href="${href}" title="Descargar Excel"
+       class="rounded-md p-2 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+      <i class="bi bi-download text-base"></i>
+    </a>
+  </div>`;
+}
+function warn(msg){
+  return `<div class="flex max-w-2xl items-center gap-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-900 shadow">
+            <i class="bi bi-exclamation-triangle-fill text-xl"></i><span>${msg}</span></div>`;
+}
+</script>
+{% endblock %}

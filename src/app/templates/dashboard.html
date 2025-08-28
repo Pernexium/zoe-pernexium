@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% set page = 'dashboard' %}
+{% block title %}Dashboard de Decisiones{% endblock %}
+{% block heading %}Dashboard de Decisiones{% endblock %}
+{% block content %}
+<style>
+    .loader-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        padding: 48px 16px;
+        margin: 16px 0;
+    }
+    .loader-content {
+        max-width: 400px;
+        width: 100%;
+        text-align: center;
+    }
+    .loader-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 8px;
+    }
+    .progress-track {
+        height: 10px;
+        background-color: #e5e7eb;
+        border-radius: 9999px;
+        overflow: hidden;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        margin-top: 12px;
+    }
+    #progress-bar {
+        height: 100%;
+        width: 0%;
+        background-color: #0c376c;
+        border-radius: 9999px;
+        transition: width 0.3s ease-in-out;
+        background-image: linear-gradient(
+            45deg,
+            rgba(255, 255, 255, 0.15) 25%,
+            transparent 25%,
+            transparent 50%,
+            rgba(255, 255, 255, 0.15) 50%,
+            rgba(255, 255, 255, 0.15) 75%,
+            transparent 75%,
+            transparent
+        );
+        background-size: 40px 40px;
+        animation: progress-animation 1s linear infinite;
+    }
+    #status-text {
+        margin-top: 8px;
+        font-size: 0.875rem;
+        color: #6b7281;
+    }
+    @keyframes progress-animation {
+        0% { background-position: 40px 0; }
+        100% { background-position: 0 0; }
+    }
+    .kpi-grid {
+        display: grid;
+        /* Ajusta minmax para dar más espacio a los íconos */
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px; /* Un poco más de espacio */
+        margin: 12px 0 20px 0;
+    }
+    .kpi-card {
+        background: #fff;
+        border-radius: 16px; /* Bordes más redondeados */
+        box-shadow: 0 4px 12px rgba(0, 30, 80, 0.07); /* Sombra más suave y corporativa */
+        padding: 16px;
+        border: 1px solid #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    }
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 30, 80, 0.1); /* Sombra más pronunciada al pasar el cursor */
+    }
+    .kpi-icon {
+        flex-shrink: 0;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* Color de fondo sutil derivado del primario */
+        background-color: #e6eef7;
+    }
+    .kpi-icon svg {
+        width: 24px;
+        height: 24px;
+        /* El color del ícono es el primario */
+        color: #0c376c;
+    }
+    .kpi-content {
+        display: flex;
+        flex-direction: column;
+    }
+    .kpi-label {
+        font-size: 0.85rem; /* Ligeramente más grande */
+        color: #6b7280;
+        margin-bottom: 4px; /* Menos espacio */
+    }
+    .kpi-value {
+        font-size: 1.75rem; /* Más prominente */
+        font-weight: 700;
+        color: #0c376c;
+        line-height: 1.1;
+    }
+    .section-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #111827;
+        margin: 14px 0 6px 0;
+    }
+    .card {
+        background: #fff;
+        border: 1px solid #eef2f7;
+        border-radius: 12px;
+        box-shadow: 0 6px 14px rgba(0,0,0,.05);
+        padding: 12px;
+        overflow: auto;
+    }
+    .preview-table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+    .preview-table th, .preview-table td {
+        border-bottom: 1px solid #f1f5f9;
+        padding: 6px 8px;
+        text-align: left;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+    .preview-table th {
+        background: #f8fafc;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+    .fecha-dinamica {
+        text-align: center;
+        margin-top: 40px;
+        margin-bottom: 20px;
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+</style>
+<div id="loader" class="loader-container">
+    <div class="loader-content">
+        <h3 class="loader-title">Generando Dashboard de Decisiones</h3>
+        <div class="progress-track">
+            <div id="progress-bar" style="width: 5%;"></div>
+        </div>
+        <p id="status-text" class="status-text"></p>
+    </div>
+</div>
+<div id="report-meta" style="display:none;margin-bottom:16px;"></div>
+<p id="fecha" class="text-sm text-gray-600 fecha-dinamica"></p>
+<script>
+(function(){
+    const loader = document.getElementById('loader');
+    const bar = document.getElementById('progress-bar');
+    const text = document.getElementById('status-text');
+    let pct = 5;
+    const setPct = p => bar.style.width = Math.max(0, Math.min(100, p)) + '%';
+    function bump(step=7, cap=90){ pct = Math.min(cap, pct + step); setPct(pct); }
+    function appendLog(line){
+        if (!line) return;
+        text.textContent = line;
+        bump();
+    }
+    function showToast(message, variant='success', timeout=4000){
+        const wrap = document.createElement('div');
+        wrap.setAttribute('role','status');
+        wrap.style.position='fixed'; wrap.style.top='16px'; wrap.style.right='16px'; wrap.style.zIndex='9999';
+        const toast = document.createElement('div');
+        toast.style.padding='12px 14px'; toast.style.borderRadius='10px'; toast.style.boxShadow='0 10px 20px rgba(0,0,0,.12)';
+        toast.style.fontSize='14px'; toast.style.color='#fff';
+        toast.style.background = variant==='success' ? '#16a34a' : (variant==='warn' ? '#f59e0b' : '#ef4444');
+        toast.textContent = message;
+        wrap.appendChild(toast); document.body.appendChild(wrap);
+        setTimeout(()=>{ toast.style.transition='opacity .25s ease'; toast.style.opacity='0'; }, timeout-250);
+        setTimeout(()=>{ wrap.remove(); }, timeout);
+    }
+    function cleanupLoader(ok){
+        if (loader) loader.remove();
+        if (ok) showToast('Dashboard generado exitosamente.');
+        else showToast('Hubo un problema al cargar el Dashboard.', 'error');
+    }
+    appendLog("Conectando con el proceso…");
+    fetch("{{ url_for('dashboard_run') }}", {method:"POST"})
+        .then(r => r.json())
+        .then(({job_id}) => {
+            const es = new EventSource(`{{ url_for('stream_logs', job_id='__ID__') }}`.replace('__ID__', job_id));
+            es.onmessage = (ev) => {
+                if (ev.data === '__END__') {
+                    es.close();
+                    setPct(98);
+                    appendLog("Finalizando…");
+                    fetch(`{{ url_for('dashboard_result', job_id='__ID__') }}`.replace('__ID__', job_id))
+                        .then(r => r.json())
+                        .then(data => {
+                            setPct(100);
+                            renderResult(data);
+                            const ok = !data.error && ((data.report && data.report.status === 'Exitoso') || true);
+                            setTimeout(() => cleanupLoader(ok), 500);
+                        })
+                        .catch(err => {
+                            appendLog("Error obteniendo resultado: " + err);
+                            cleanupLoader(false);
+                        });
+                } else {
+                    appendLog(ev.data);
+                }
+            };
+            es.onerror = () => {
+                appendLog("Conexión de logs finalizada.");
+                es.close();
+            };
+        })
+        .catch(err => {
+            appendLog("No se pudo iniciar el proceso: " + err);
+            cleanupLoader(false);
+        });
+
+    function renderResult(data){
+        if (data.error){
+            appendLog("Proceso incompleto: " + data.error);
+            return;
+        }
+        document.getElementById('fecha').textContent = data.fecha_actual || '';
+        const meta = document.getElementById('report-meta');
+        meta.style.display = 'block';
+        meta.innerHTML = '';
+        const grid = document.createElement('div');
+        grid.className = 'kpi-grid';
+        const k = data.kpis || {};
+        function fmtInt(v){ return (v==null || isNaN(v)) ? '—' : Number(v).toLocaleString('es-MX'); }
+        function fmtPct(v){
+            if (v==null || isNaN(v)) return '—';
+            const n = Number(v) * 100;
+            return n.toFixed(1).replace('.', ',') + '%';
+        }
+        function createKpiCard(label, value, iconPath) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'kpi-card';
+            const iconEl = document.createElement('div');
+            iconEl.className = 'kpi-icon';
+            iconEl.innerHTML = `<img src="${iconPath}" alt="${label}" style="width:24px;height:24px;">`;
+            const contentEl = document.createElement('div');
+            contentEl.className = 'kpi-content';
+            const labelEl = document.createElement('div');
+            labelEl.className = 'kpi-label';
+            labelEl.textContent = label;
+            const valueEl = document.createElement('div');
+            valueEl.className = 'kpi-value';
+            valueEl.textContent = value;
+            contentEl.appendChild(labelEl);
+            contentEl.appendChild(valueEl);
+            cardEl.appendChild(iconEl);
+            cardEl.appendChild(contentEl);
+            return cardEl;
+        }
+        grid.appendChild(createKpiCard('Envíos totales', fmtInt(k.envios_totales), "{{ url_for('static', filename='svg/credit-card-check-svgrepo-com.svg') }}"));
+        grid.appendChild(createKpiCard('Eficiencia global', fmtPct(k.eficiencia_global), "{{ url_for('static', filename='svg/global-svgrepo-com.svg') }}"));
+        grid.appendChild(createKpiCard('Créditos contactados', fmtInt(k.creditos_contactados), "{{ url_for('static', filename='svg/phone-plus-svgrepo-com.svg') }}"));
+        grid.appendChild(createKpiCard('Teléfonos contactados', fmtInt(k.telefonos_contactados), "{{ url_for('static', filename='svg/phone-slash-svgrepo-com.svg') }}"));
+        grid.appendChild(createKpiCard('Cuentas ilocalizables', fmtInt(k.cuentas_ilocalizables), "{{ url_for('static', filename='svg/send-svgrepo-com.svg') }}"));
+        meta.appendChild(grid);
+    }
+})();
+</script>
+{% endblock %}

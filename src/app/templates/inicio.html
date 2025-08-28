@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% set page = 'inicio' %}
+{% block title %}ZOE{% endblock %}
+{% block head_extra %}
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  html { font-family: "Inter", system-ui, sans-serif; background-color:#fff; color:#1e293b; }
+  @keyframes fade-in-up { from {opacity:0; transform:translateY(20px)} to {opacity:1; transform:translateY(0)} }
+  .animate-fade-in-up { animation: fade-in-up .6s ease-out forwards; opacity:0 }
+  .delay-100{animation-delay:.1s}.delay-200{animation-delay:.2s}.delay-300{animation-delay:.3s}.delay-400{animation-delay:.4s}
+
+  /* Hover: escala SOLO el canvas del globo */
+  #zoe-globe {
+    transition: transform .25s ease;
+    transform-origin: center center;
+    will-change: transform;
+  }
+  #zoe-globe-wrapper:hover #zoe-globe {
+    transform: scale(1.12);
+  }
+</style>
+{% endblock %}
+{% block heading %}{% endblock %}
+{% block content %}
+<div class="bg-white">
+  <main class="transition-all duration-300 lg:ml-4">
+    <div class="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+      <span class="block text-lg font-semibold tracking-tighter text-[#508ef6] animate-fade-in-up">
+        ZOE - Pernexium
+      </span>
+      <h1 class="mt-2 text-4xl font-extrabold tracking-tighter text-slate-800 sm:text-5xl animate-fade-in-up delay-100">
+        Zona de Orquestación Estratégica
+      </h1>
+      <p class="mt-6 max-w-3xl text-lg leading-7 text-slate-600 animate-fade-in-up delay-200">
+        Centraliza el contacto con tus clientes: explora dashboards de decisiones,
+        segmenta públicos y dispara campañas manuales o inteligentes, todo mientras supervisas resultados en tiempo real.
+      </p>
+      <div class="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-4">
+        <div
+          class="relative col-span-1 overflow-hidden rounded-b rounded-t-2xl bg-gray-50 p-8 shadow-2xl shadow-black/10 ring-1 ring-black/5 lg:col-span-2 lg:rounded-l-2xl lg:rounded-r animate-fade-in-up delay-300"
+        >
+          <div class="relative z-20">
+            <h3 class="text-2xl font-semibold text-gray-950">
+              De la estrategia a la acción, en un clic
+            </h3>
+            <p class="mt-4 max-w-sm text-gray-700">
+              Visualiza KPIs clave, segmenta por estrategia decidida, detona campañas y deja que el Motor de Gestión ejecute interacciones inteligentes mientras monitoreas la operación desde un único panel.
+            </p>
+          </div>
+          <div
+            id="zoe-globe-wrapper"
+            class="absolute right-0 bottom-0 z-10 opacity-80"
+            style="--globe-x: 250px; --globe-y: 480px; transform: translate(var(--globe-x), var(--globe-y)); will-change: transform;"
+          >
+            <canvas
+              id="zoe-globe"
+              aria-hidden="true"
+              class="aspect-square max-w-fit"
+              style="width: 420px; height: 420px;"
+              width="740" height="740">
+            </canvas>
+          </div>
+        </div>
+        <div class="flex flex-col justify-between p-8 bg-gradient-to-br from-[#5a95f7] to-[#2665eb] rounded-xl lg:rounded-l-none lg:rounded-r-xl ring-0 animate-fade-in-up delay-400">
+          <h3 class="text-xl font-medium text-white">Más que tecnología: estructura, claridad y enfoque.</h3>
+          <figcaption class="mt-8">
+            <div class="font-semibold text-white">Equipo Técnico de Pernexium</div>
+            <div class="mt-1 text-sm text-blue-200">Innovación&nbsp;&amp;&nbsp;Desarrollo</div>
+          </figcaption>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>
+<script src="{{ url_for('static', filename='js/inicio_charts.js') }}" defer></script>
+<script type="module">
+  import createGlobe from 'https://cdn.skypack.dev/cobe';
+  const initGlobe = () => {
+    const canvas = document.getElementById('zoe-globe');
+    if (!canvas) return;
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    const SIZE = 700;
+    canvas.style.width = SIZE + 'px';
+    canvas.style.height = SIZE + 'px';
+    canvas.width = Math.round(SIZE * DPR);
+    canvas.height = Math.round(SIZE * DPR);
+    let phi = 0;
+    createGlobe(canvas, {
+      devicePixelRatio: DPR,
+      width: canvas.width,
+      height: canvas.height,
+      phi: 0,
+      theta: -0.3,
+      dark: 0,
+      diffuse: 1.2,
+      mapSamples: 30000,
+      mapBrightness: 13,
+      mapBaseBrightness: 0.01,
+      baseColor: [1, 1, 1],
+      glowColor: [1, 1, 1],
+      markerColor: [0.4, 0.4, 0.4],
+      markers: [],
+      onRender: (state) => {
+        state.phi = phi;
+        phi += 0.0005;
+      },
+    });
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initGlobe);
+  } else {
+    initGlobe();
+  }
+</script>
+{% endblock %}

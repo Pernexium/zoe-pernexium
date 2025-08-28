@@ -1,0 +1,357 @@
+{%- extends 'base.html' %}
+{% set page = 'motor_gestion' %}
+{% block title %}Motor de Gestión{% endblock %}
+{% block heading %}Motor de Gestión{% endblock %}
+{% set grp_param_gen = [
+"CONTACT_LIMIT_PER_ITERATION",
+"DIAS_HACIA_ATRAS_CONTACTO_ADMISIBLE",
+"UNREACHABLE_DICTAMINATION_DAYS",
+"UNREACHABLE_DICTAMINATION_HOURS",
+] %}
+{% set grp_fuente_datos = [
+"QUERY_TO_CONTACT","COLUMNA_CREDITO","COLUMNA_NOMBRE","COLUMNA_SALDO",
+"COLUMNAS_TELEFONOS","COLUMNA_QUERY",
+] %}
+{% set grp_estrategia = [
+"CONTACT_CHANNELS_ORDERED","CONTACT_CHANNELS_DISTRIBUTION",
+"CALL_AGENT_ID","CALL_TYPE","WA_SERVERS_AVAILABLE","WA_MESSAGE",
+"PERCENTAJE_OF_SEND_CALLS","PERCENTAJE_OF_SEND_WA","PERCENTAJE_OF_SEND_BLASTER",
+] %}
+{% block content %}
+<div id="toast-container" class="fixed bottom-4 right-4 z-50 w-full max-w-xs space-y-3"></div>
+<section class="relative min-h-screen bg-gradient-to-b from-white via-slate-50 to-slate-100 pt-8 pb-20">
+  <div class="container mx-auto max-w-7xl px-4">
+    {% if configs %}
+    <div class="space-y-10">
+      {% for cfg in configs %}
+      <article x-data="{ open:false, step:1 }"
+        class="rounded-3xl border border-slate-200 bg-white/80 shadow-lg backdrop-blur">
+        <header @click="open = !open"
+          class="flex cursor-pointer select-none items-center justify-between gap-4 px-8 py-6 transition-colors group">
+          <div class="flex items-center gap-4">
+            <div :class="open ? 'bg-emerald-500' : 'bg-emerald-400'"
+              class="h-3 w-3 rounded-full transition-colors"></div>
+            <h3 class="text-lg font-bold tracking-tight text-slate-800 sm:text-xl">
+              Motor {{ loop.index }}:
+              <span class="text-[#0c376c]">{{ cfg.slug }}</span>
+            </h3>
+          </div>
+          <svg :class="open ? 'rotate-180 text-[#0c376c]' : 'text-slate-400'"
+            class="h-6 w-6 transition-transform duration-300" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 9l-7 7-7-7"/>
+          </svg>
+        </header>
+        <section x-show="open" x-collapse x-transition>
+          <div class="relative px-6 pt-10 pb-6">
+            <div class="absolute inset-x-12 top-1/2 h-0.5 -translate-y-1/2 transform bg-slate-200">
+              <div class="h-0.5 bg-[#0c376c] transition-all duration-300"
+                :style="{ width: ((step - 1) / 2) * 100 + '%' }"></div>
+            </div>
+            <div class="relative z-10 flex items-center justify-between">
+              <template x-for="(label, idx) in ['Parámetros Generales','Fuente de Datos','Estrategia de Canales']" :key="idx">
+                <div class="flex flex-1 flex-col items-center">
+                  <button @click="step = idx + 1"
+                    class="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition
+                    focus:outline-none focus:ring-4 focus:ring-[#0c376c]/40"
+                    :class="step > idx ? 'bg-[#0c376c] text-white shadow' : 'bg-white ring-2 ring-slate-300 text-slate-500'">
+                    <span x-text="idx + 1"></span>
+                  </button>
+                  <span x-text="label"
+                    class="mt-2 text-center text-xs font-medium text-slate-600"></span>
+                </div>
+              </template>
+            </div>
+          </div>
+          {# ================== FORMULARIO PRINCIPAL ================== #}
+          <form class="config-form space-y-10 px-8 pb-10"
+                data-url="{{ url_for('motor_gestion_update_config') }}"
+                novalidate>
+            <input type="hidden" name="slug" value="{{ cfg.slug }}"/>
+            {# ----------------------------- STEP 1 ----------------------------- #}
+            <div x-show="step === 1" x-transition
+              class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {% for k in grp_param_gen %}
+              {% set val = cfg.data.get(k) %}
+              <div>
+                <label for="{{ k }}-{{loop.index}}" class="mb-1 block text-sm font-semibold text-slate-700">
+                  {{ k | replace('_',' ') | title }}
+                </label>
+                <input {% if val is number %}type="number" step="any"{% else %}type="text"{% endif %}
+                id="{{ k }}-{{loop.index}}" name="config[{{ k }}]" value="{{ val }}"
+                class="w-full rounded-lg border-slate-300 shadow-sm placeholder-slate-400
+                focus:border-[#0c376c] focus:ring-[#0c376c]"/>
+              </div>
+              {% endfor %}
+            </div>
+            {# ----------------------------- STEP 2 ----------------------------- #}
+            {% set list_keys = [
+              'COLUMNA_CREDITO',
+              'COLUMNA_NOMBRE',
+              'COLUMNA_SALDO',
+              'COLUMNA_QUERY',
+            ] %}
+            <div x-show="step === 2" x-transition
+              class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {% for k in grp_fuente_datos %}
+              {% set val = cfg.data.get(k) %}
+              <div>
+                <label for="{{ k }}-{{ loop.index }}" class="mb-1 block text-sm font-semibold text-slate-700">
+                  {{ k | replace('_',' ') | title }}
+                </label>
+                {% if k == 'COLUMNAS_TELEFONOS' %}
+                  <textarea id="{{ k }}-{{ loop.index }}" name="config[{{ k }}]" rows="3"
+                    class="w-full resize-none rounded-lg border-slate-300 shadow-sm placeholder-slate-400
+                          focus:border-[#0c376c] focus:ring-[#0c376c]"
+                    placeholder="Ej: telefono_casa, telefono_movil">{{ val | join(', ') if val is sequence else val }}</textarea>
+                {% else %}
+                  <input type="text"
+                    id="{{ k }}-{{ loop.index }}"
+                    name="config[{{ k }}]"
+                    value="{{ val | join(', ') if k in list_keys and val is sequence else val }}"
+                    class="w-full rounded-lg border-slate-300 shadow-sm placeholder-slate-400
+                          focus:border-[#0c376c] focus:ring-[#0c376c]"/>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+            {# ----------------------------- STEP 3 ----------------------------- #}
+            {% set selected_audio = cfg.data.get('BLASTER_CONFIG_UPDATES', {}).get('nombre_del_audio') %}
+            <div x-show="step === 3" x-transition
+              class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {% for k in grp_estrategia %}
+              {% set val = cfg.data.get(k) %}
+              <div>
+                <label for="{{ k }}-{{loop.index}}" class="mb-1 block text-sm font-semibold text-slate-700">
+                  {{ k | replace('_',' ') | title }}
+                </label>
+                {% if val is mapping or val is sequence %}
+                <textarea id="{{ k }}-{{loop.index}}" name="config[{{ k }}]" rows="3"
+                  class="w-full resize-none rounded-lg border-slate-300 shadow-sm font-mono text-xs
+                  focus:border-[#0c376c] focus:ring-[#0c376c]"
+                  placeholder="JSON">{{ val | tojson(indent=2) }}</textarea>
+                {% else %}
+                <input {% if val is number %}type="number" step="any"{% else %}type="text"{% endif %}
+                id="{{ k }}-{{loop.index}}" name="config[{{ k }}]" value="{{ val }}"
+                  class="w-full rounded-lg border-slate-300 shadow-sm placeholder-slate-400
+                  focus:border-[#0c376c] focus:ring-[#0c376c]"/>
+                {% endif %}
+              </div>
+              {% endfor %}
+              <div x-data="{ audios: [] }"
+                x-init="fetch('{{ url_for('motor_gestion_audios') }}')
+                .then(r => r.json())
+                .then(d => audios = d.audios)">
+                <label for="nombre_del_audio-{{loop.index}}"
+                  class="mb-1 block text-sm font-semibold text-slate-700">
+                  Nombre del Audio de Bláster
+                </label>
+                <select id="nombre_del_audio-{{loop.index}}"
+                  name="config[BLASTER_CONFIG_UPDATES][nombre_del_audio]"
+                  class="w-full rounded-lg border-slate-300 shadow-sm
+                  focus:border-[#0c376c] focus:ring-[#0c376c]">
+                  <option value="" disabled
+                    x-bind:selected="'{{ selected_audio or '' }}' === ''">
+                    — Selecciona un audio de bláster —
+                  </option>
+                  <template x-for="audio in audios" :key="audio">
+                    <option x-text="audio"
+                      :value="audio"
+                      x-bind:selected="audio === '{{ selected_audio }}'"></option>
+                  </template>
+                </select>
+              </div>
+            </div>
+            <div class="flex justify-end pt-4">
+              <div class="flex gap-2">
+                <button type="button"
+                  @click="$event.target.closest('form').reset()"
+                  class="inline-flex items-center gap-2 rounded-full border px-6 py-2.5 text-sm font-semibold transition shadow
+                  text-[#0c376c] bg-white hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-[#0c376c]/40">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 10h11m-6-6l-5 5 5 5m13 4H9"/>
+                  </svg>
+                  Revertir
+                </button>
+                <button type="submit"
+                  class="btn-save inline-flex items-center gap-2 rounded-full bg-[#0c376c] px-6 py-2.5 text-sm font-semibold text-white shadow transition
+                  hover:bg-[#0b305e] focus:outline-none focus:ring-4 focus:ring-[#0c376c]/40 disabled:opacity-60">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <span class="btn-text">Guardar</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </section>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-center text-slate-500">No se encontraron motores.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<style>
+.toast {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 20rem; 
+  padding: 1rem; 
+  color: #4b5563;
+  background-color: white;
+  border-radius: 0.75rem; 
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  transition: all 0.3s;
+}
+.toast.toast-success .toast-icon {
+  background-color: #dcfce7; 
+  color: #16a34a; 
+}
+.toast.toast-error .toast-icon {
+  background-color: #fee2e2;
+  color: #dc2626; 
+}
+.toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem; 
+  height: 2rem;
+  border-radius: 0.5rem; 
+}
+.toast-enter {
+  opacity: 0;
+  transform: scale(0.9) translateY(20px);
+}
+.toast-leave-to {
+  opacity: 0;
+  transform: scale(0.9) translateY(20px);
+}
+</style>
+<script type="module">
+  function showToast(message, type = 'success', duration = 4000) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toastId = `toast-${Date.now()}`;
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = `toast toast-${type}`;
+    toast.setAttribute('role', 'alert');
+    const iconSvg = type === 'success'
+      ? `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>`
+      : `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.697a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>`;
+    toast.innerHTML = `
+      <div class="toast-icon">${iconSvg}</div>
+      <div class="ms-3 text-sm font-normal">${message}</div>
+      <button type="button" class="ms-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8" onclick="document.getElementById('${toastId}').remove()">
+        <span class="sr-only">Cerrar</span><svg class="w-3 h-3" fill="none" viewBox="0 0 14 14" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/></svg>
+      </button>`;
+    requestAnimationFrame(() => {
+      toast.classList.add('toast-enter');
+      container.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.remove('toast-enter'));
+    });
+    setTimeout(() => {
+      toast.classList.add('toast-leave-to');
+      toast.addEventListener('transitionend', () => toast.remove());
+    }, duration);
+  }
+  function getFormDataObject(form) {
+    const LIST_KEYS = [
+      'COLUMNA_CREDITO',
+      'COLUMNA_NOMBRE',
+      'COLUMNA_SALDO',
+      'COLUMNA_QUERY',
+    ];
+    const config = {};
+    const elements = form.querySelectorAll('input, textarea, select');
+    elements.forEach(el => {
+      if (!el.name || el.name === 'slug') return;
+      const match = el.name.match(/config\[([^\]]+)\](?:\[([^\]]+)\])?/);
+      if (!match) return;
+      const key = match[1];
+      const subkey = match[2];
+      let value = el.value;
+      if (subkey) {
+        config[key] = config[key] || {};
+        config[key][subkey] = value;
+        return;
+      }
+      if (LIST_KEYS.includes(key)) {
+        try {
+          value = JSON.parse(value);                
+        } catch(e) {
+          value = value
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);                     
+        }
+        config[key] = value;
+        return;
+      }
+      if (el.tagName === 'TEXTAREA') {
+        try {
+          value = JSON.parse(value);
+        } catch (e) {
+          if (key === 'COLUMNAS_TELEFONOS') {
+            value = value.split(',').map(s => s.trim()).filter(Boolean);
+          }
+        }
+      } else if (el.type === 'number') {
+        value = value === '' ? null : Number(value);
+      }
+      config[key] = value;
+    });
+    return config;
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.config-form').forEach(form => {
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const saveButton = form.querySelector('.btn-save');
+        const btnText = saveButton.querySelector('.btn-text');
+        const originalText = btnText.textContent;
+        const slug = form.querySelector('input[name="slug"]').value;
+        const url = form.dataset.url;
+        saveButton.disabled = true;
+        btnText.textContent = 'Guardando...';
+        const configData = getFormDataObject(form);
+        const payload = {
+          slug: slug,
+          config: configData
+        };
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (response.ok) {
+            showToast('Configuración guardada con éxito.', 'success');
+          } else {
+            const errorData = await response.json();
+            showToast(`Error al guardar: ${errorData.error || response.statusText}`, 'error');
+          }
+        } catch (error) {
+          console.error('Error de red:', error);
+          showToast('Error de conexión al intentar guardar.', 'error');
+        } finally {
+          saveButton.disabled = false;
+          btnText.textContent = originalText;
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

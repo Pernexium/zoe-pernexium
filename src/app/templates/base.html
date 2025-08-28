@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pernexium - {% block title %}{% endblock %}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='logos/PXM isotipo 3.png') }}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="{{ url_for('static', filename='js/tailwind-config.js') }}"></script>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <style>
+    #sidebar.collapsed .logo-full  { display: none;  }
+    #sidebar.collapsed .logo-mini  { display: block; }
+    #sidebar.collapsed .profile-details,
+    #sidebar.collapsed .profile-caret { display: none; }
+    #sidebar.collapsed .profile-btn   { justify-content: center; }
+    [x-cloak] { display:none !important; }
+  </style>
+</head>
+<body class="bg-white font-sans flex h-screen overflow-hidden">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div id="flash-toasts" class="fixed top-5 right-5 z-50 space-y-3">
+        {% for category, message in messages %}
+          <div x-data="{ show: true }"
+               x-show="show"
+               x-transition.duration.300ms
+               @click="show = false"
+               class="cursor-pointer px-4 py-3 rounded shadow-lg text-white
+                      {% if category == 'error' %}bg-red-500
+                      {% elif category == 'success' %}bg-green-500
+                      {% elif category == 'warning' %}bg-yellow-500 text-gray-900
+                      {% else %}bg-blue-500{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  <aside id="sidebar" class="w-64 bg-primary text-white flex flex-col transition-all duration-300">
+    <div class="p-6 flex justify-center items-center h-20">
+      <a href="{{ url_for('inicio') }}"
+         class="logo-full block text-gray-200 font-bold text-[27px] hover:text-secondary-light transition-colors duration-200">
+        PERNEXIUM
+      </a>
+      <a href="{{ url_for('inicio') }}" class="block">
+        <img src="{{ url_for('static', filename='logos/PXM isotipo 4.png') }}"
+             alt="Pernexium Iso"
+             class="h-9 logo-mini hidden cursor-pointer">
+      </a>
+    </div>
+    <nav class="flex-1 mt-1 flex flex-col justify-between">
+      <div>
+        <div class="space-y-1 px-4">
+          <a href="{{ url_for('dashboard') }}"
+            class="sidebar-item flex items-center space-x-3 p-3 rounded-lg transition-all duration-200
+                    {% if page == 'dashboard' %}bg-primaryLight text-white
+                    {% else %}hover:bg-primaryLight text-gray-200 hover:text-white{% endif %}">
+              <img src="{{ url_for('static', filename='svg/dashboard.svg') }}"
+                  alt="" aria-hidden="true"
+                  class="sidebar-icon w-5 h-5 shrink-0 brightness-0 invert" />
+            <span>Dashboard</span>
+          </a>
+        </div>
+        <div class="mt-2 space-y-1 px-4"
+             x-data="{ open: {{ 'true' if page in ['segmentador','detonador','detonador_ara','detonador_aria','detonador_sam'] else 'false' }} }">
+          <button @click="open = !open"
+            class="sidebar-item w-full relative flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 text-left
+                  {% if page in ['segmentador','detonador','detonador_ara','detonador_aria','detonador_sam'] %}bg-primaryLight text-white
+                  {% else %}hover:bg-primaryLight text-gray-200 hover:text-white{% endif %}">
+            <img src="{{ url_for('static', filename='svg/manual.svg') }}"
+                alt="" aria-hidden="true"
+                class="sidebar-icon w-5 h-5 shrink-0 brightness-0 invert" />
+            <span>Manual</span>
+            <i class="fas fa-chevron-right absolute right-4 text-xs transition-transform"
+              :class="{ 'rotate-90': open }"></i>
+          </button>
+          <div x-show="open" x-transition x-cloak class="pl-6 space-y-1">
+            <a href="{{ url_for('segmentador') }}"
+               class="sidebar-item flex items-center space-x-3 p-2 rounded-lg text-sm transition-all duration-200
+                      {% if page == 'segmentador' %}bg-primaryLight text-white
+                      {% else %}hover:bg-primaryLight text-gray-200 hover:text-white{% endif %}">
+              <i class="fas fa-filter fa-fw sidebar-icon"></i>
+              <span>Segmentador</span>
+            </a>
+            <a href="{{ url_for('detonador') }}"
+               class="sidebar-item flex items-center space-x-3 p-2 rounded-lg text-sm transition-all duration-200
+                      {% if page in ['detonador','detonador_ara','detonador_aria','detonador_sam'] %}bg-primaryLight text-white
+                      {% else %}hover:bg-primaryLight text-gray-200 hover:text-white{% endif %}">
+              <i class="fas fa-bolt fa-fw sidebar-icon"></i>
+              <span>Detonador</span>
+            </a>
+          </div>
+        </div>
+        <div class="mt-2 space-y-1 px-4"
+             x-data="{ open: {{ 'true' if page in ['motor_gestion'] else 'false' }} }">
+          <button @click="open = !open"
+            class="sidebar-item w-full relative flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 text-left
+                  {% if page in ['motor_gestion'] %}bg-primaryLight text-white
+                  {% else %}hover:bg-primaryLight text-gray-200 hover:text-white{% endif %}">
+            <img src="{{ url_for('static', filename='svg/inteligente.svg') }}"
+                alt="" aria-hidden="true"
+                class="sidebar-icon w-5 h-5 shrink-0 brightness-0 invert" />
+            <span>Inteligente</span>
+            <i class="fas fa-chevron-right absolute right-4 text-xs transition-transform"
+              :class="{ 'rotate-90': open }"></i>
+          </button>
+          <div x-show="open" x-transition x-cloak class="pl-6 space-y-1">
+            <a href="{{ url_for('motor_gestion') }}"
+               class="sidebar-item flex items-center space-x-3 p-2 rounded-lg text-sm transition-all duration-200
+                      {% if page == 'motor_gestion' %}bg-primaryLight text-white
+                      {% else %}hover:bg-primaryLight text-gray-200 hover:text-white{% endif %}">
+              <i class="fas fa-project-diagram sidebar-icon"></i>
+              <span>Motor de Gestión</span>
+            </a>
+          </div>
+        </div>
+        <div class="mt-2 space-y-1 px-4">
+          <a href="{{ url_for('monitoreo') }}"
+            class="sidebar-item flex items-center space-x-3 p-3 rounded-lg transition-all duration-200
+                    {% if page == 'monitoreo' %}bg-primaryLight text-white
+                    {% else %}hover:bg-primaryLight text-gray-200 hover:text-white{% endif %}">
+            <img src="{{ url_for('static', filename='svg/monitoreo.svg') }}"
+                alt="" aria-hidden="true"
+                class="sidebar-icon w-5 h-5 shrink-0 brightness-0 invert" />
+            <span>Monitoreo</span>
+          </a>
+        </div>
+        <div class="mt-8 px-4">
+          <p class="text-xs uppercase tracking-wider text-gray-300 mb-2">Ayuda</p>
+          <a href="{{ url_for('contacto') }}"
+             class="sidebar-item flex items-center space-x-3 p-3 rounded-lg transition-all duration-200
+                    {% if page == 'contacto' %}bg-primaryLight text-white
+                    {% else %}hover:bg-primaryLight text-gray-200 hover:text-white{% endif %}">
+            <i class="fas fa-question-circle sidebar-icon"></i>
+            <span>Contacto</span>
+          </a>
+        </div>
+      </div>
+      <div class="relative p-4 border-t border-primaryLight" x-data="{ open: false }">
+        <button @click="open = !open"
+                class="profile-btn flex items-center w-full space-x-3 text-left focus:outline-none p-2 rounded-lg hover:bg-primaryLight">
+          <div class="w-9 min-w-[2.25rem] h-9 rounded-full bg-primaryLight flex items-center justify-center">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="profile-details flex-1">
+            <p class="font-medium text-sm leading-tight">{{ display_name }}</p>
+            <p class="text-xs text-gray-300">Administrador</p>
+          </div>
+          <i class="fas fa-chevron-up ml-auto transition-transform profile-caret"
+             :class="{ 'rotate-180': !open }"></i>
+        </button>
+        <div x-show="open" x-cloak              
+            class="absolute bottom-full left-1/2 -translate-x-1/2 
+                    mb-2 w-56                     
+                    bg-white text-gray-800 rounded-lg shadow-lg z-50 overflow-hidden">
+          <a href="{{ url_for('logout') }}"
+            class="flex items-center space-x-3 px-4 py-3
+                    transition-colors duration-200 hover:bg-gray-100
+                    text-red-500 font-medium">
+            <i class="fa-solid fa-arrow-right-from-bracket fa-fw sidebar-icon"></i>
+            <span>Cerrar&nbsp;sesión</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+  </aside>
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <header class="bg-white shadow-sm py-4 px-6 flex items-center border-b border-gray-200">
+      <button id="toggle-btn"
+              class="mr-4 p-2 rounded-lg text-primary hover:bg-gray-100 focus:outline-none transition-transform duration-300"
+              aria-label="Mostrar u ocultar menú">
+        <i class="fas fa-bars text-xl"></i>
+      </button>
+      <h2 class="text-2xl font-bold text-gray-800">
+        {% block heading %}{% endblock %}
+      </h2>
+    </header>
+    <main class="flex-1 overflow-y-auto p-6 bg-white">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  <script>
+    (function () {
+      const KEY     = 'sidebarCollapsed';
+      const sidebar = document.getElementById('sidebar');
+      const btn     = document.getElementById('toggle-btn');
+      sidebar.classList.add('no-anim');
+      if (localStorage.getItem(KEY) === 'true') {
+        sidebar.classList.add('collapsed');
+        btn.classList.add('rotate-180');
+      }
+      requestAnimationFrame(() => sidebar.classList.remove('no-anim'));
+      btn.addEventListener('click', () => {
+        const collapsed = sidebar.classList.toggle('collapsed');
+        btn.classList.toggle('rotate-180', collapsed);
+        localStorage.setItem(KEY, collapsed);
+      });
+    })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x/dist/cdn.min.js" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

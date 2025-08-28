@@ -1,0 +1,7 @@
+Flask>=2.3
+python-dotenv
+Jinja2
+Werkzeug
+boto3
+pandas
+pytz

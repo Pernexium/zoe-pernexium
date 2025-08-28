@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% set page = 'contacto' %}
+{% block title %}Contacto{% endblock %}
+{% block heading %}Contáctanos{% endblock %}
+{% block content %}
+<section class="relative isolate overflow-hidden bg-white">
+  <div class="absolute inset-0 -z-10 pointer-events-none">
+    <div class="absolute inset-0 bg-gradient-to-br from-[#185cb4]-50 via-transparent to-[#185cb4]-50 opacity-60"></div>
+  </div>
+  <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <div class="flex justify-center pb-10">
+      <img src="{{ url_for('static', filename='logos/PXM isologo 2.png') }}"
+           alt="Pernexium Iso"
+           class="w-52 md:w-64 lg:w-72 h-auto drop-shadow-xl transition-transform duration-700 hover:rotate-1 hover:scale-105">
+    </div>
+    <p class="mx-auto mb-20 max-w-2xl text-center text-lg leading-relaxed text-gray-700">
+      <span class="font-semibold text-[#185cb4]">¿Tienes alguna duda o requieres ayuda?</span><br>
+      ¡Escríbenos y te responderemos a la brevedad!
+    </p>
+    <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      {% macro card(nombre, puesto, foto, correo, whatsapp_href, whatsapp_txt) -%}
+        <div class="relative flex flex-col items-center rounded-xl border border-gray-200 bg-white/60 p-8 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+          <span class="absolute -top-0.5 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#185cb4] via-[#185cb4] to-[#185cb4]"></span>
+          <img src="{{ url_for('static', filename=foto) }}"
+          alt="{{ nombre }}"
+          class="w-24 h-24 rounded-full object-cover shadow-md ring-2 ring-[#185cb4]/50 group-hover:ring-[#185cb4] transition duration-300">
+          <h3 class="text-lg font-semibold text-gray-800">{{ nombre }}</h3>
+          <p class="text-sm font-medium text-[#185cb4]">{{ puesto }}</p>
+          <div class="mt-3 space-y-1 text-sm">
+            <p class="flex items-center justify-center text-gray-600">
+              <i class="fas fa-envelope mr-2 text-[#185cb4]"></i>
+              <a href="mailto:{{ correo }}" class="hover:underline">{{ correo }}</a>
+            </p>
+            <p class="flex items-center justify-center text-gray-600">
+              <i class="fab fa-whatsapp mr-2 text-green-500"></i>
+              <a href="{{ whatsapp_href }}" target="_blank" rel="noopener" class="hover:underline">{{ whatsapp_txt }}</a>
+            </p>
+          </div>
+        </div>
+      {%- endmacro %}
+      {{ card('Verónica Bárcenas García', 'Founding Partner',
+              'team/veronica.jpg', 'veronica.barcenas@dirsamexico.com',
+              'https://wa.me/525585349307', '+52 55 8534 9307') }}
+
+      {{ card('Jairo Enrique Ramírez Sánchez', 'Chief Technology Officer',
+              'team/enrique.jpg', 'enrique.ramirez@pernexium.com.mx',
+              'https://wa.me/527151136840', '+52 715 113 6840') }}
+
+      {{ card('Erick Hernández Silva', 'Director de Programación',
+              'team/erick.jpg', 'erick.silva@pernexium.com.mx',
+              'https://wa.me/525513023544', '+52 55 1302 3544') }}
+
+      {{ card('Carlos Espejel Salazar', 'Director de Analítica',
+              'team/carlos.jpg', 'carlos.espejel@pernexium.com.mx',
+              'https://wa.me/527151672498', '+52 715 167 2498') }}
+
+      {{ card('Héctor Hibran Tapia Fernández', 'Científico de Datos',
+              'team/hibran.jpg', 'hibran.tapia@pernexium.com.mx',
+              'https://wa.me/525615518463', '+52 56 1551 8463') }}
+
+      {{ card('Adolfo Hernández Fernández', 'Programador Backend',
+              'team/adolfo.jpg', 'adolfo.hernandez@pernexium.com.mx',
+              'https://wa.me/525535910316', '+52 55 3591 0316') }}
+
+      {{ card('Israel Sánchez Miranda', 'Programador Backend',
+              'team/israel.jpg', 'israel.sanchez@pernexium.com.mx',
+              'https://wa.me/525536767108', '+52 55 3676 7108') }}
+
+      {{ card('Luis Enrique Salazar Pérez', 'Programador AWS',
+              'team/luis.jpg', 'luis.salazar@pernexium.com.mx',
+              'https://wa.me/525518021576', '+52 55 1802 1576') }}
+      
+      {{ card('Fortino Pérez Zárate', 'Programador Fullstack',
+              'team/fortino.jpg', 'fortino.perez@pernexium.com.mx',
+              'https://wa.me/524435470342', '+52 443 547 0342') }}
+    </div>
+  </div>
+</section>
+{% endblock %}
